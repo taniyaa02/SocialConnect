@@ -1,0 +1,7 @@
+asgiref==3.9.1
+Django==5.2.5
+django-cors-headers
+djangorestframework==3.16.1
+sqlparse==0.5.3
+Pillow
+tzdata==2025.2

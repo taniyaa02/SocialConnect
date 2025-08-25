@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .post-content {
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-md fixed w-full top-0 z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <img width="110px" src="https://placehold.co/600x400?text=SocialConnect" alt="SocialConnect Logo">
+                <div class="flex items-center space-x-4">
+                    <a href="#" class="text-gray-600 hover:text-blue-600">Home</a>
+                    <a href="#profile" class="text-gray-600 hover:text-blue-600">Profile</a>
+                    <button id="logout-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 pt-20 pb-8" style="padding-top: 190px;">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            <!-- Left Sidebar (Profile) -->
+            <div class="md:col-span-1" id="profile">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex flex-col items-center">
+                        <img src="https://placehold.co/128x128/E2E8F0/4A5568?text=User" alt="Profile Picture" class="w-32 h-32 rounded-full mb-4">
+                        <h2 class="text-2xl font-bold" id="profile-username">Jane Doe</h2>
+                        <p class="text-gray-600" id="profile-bio">Web Developer | Tech Enthusiast | Coffee Lover</p>
+                        <div class="flex space-x-4 mt-4">
+                            <div class="text-center">
+                                <p class="font-bold text-lg" id="profile-posts-count">15</p>
+                                <p class="text-gray-500">Posts</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-lg" id="profile-followers-count">250</p>
+                                <p class="text-gray-500">Followers</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-lg" id="profile-following-count">120</p>
+                                <p class="text-gray-500">Following</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Content (Feed) -->
+            <div class="md:col-span-2">
+                <!-- Create Post Form -->
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <h3 class="text-xl font-bold mb-4">Create a Post</h3>
+                    <textarea id="post-content" class="w-full p-2 border border-gray-300 rounded-md" rows="3" placeholder="What's on your mind?"></textarea>
+                    <button id="create-post-btn" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">Post</button>
+                </div>
+
+                <!-- Posts Feed -->
+                <div id="posts-feed" class="space-y-6">
+                    <!-- Posts will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-6 text-center">Login to SocialConnect</h2>
+            <input id="login-username" type="text" placeholder="Username" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+            <input id="login-password" type="password" placeholder="Password" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+            <button id="login-btn" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">Login</button>
+            <p class="text-center text-sm text-gray-600 mt-4">
+                Don't have an account? <a href="#" id="show-register" class="text-blue-600 hover:underline">Register</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-6 text-center">Register for SocialConnect</h2>
+            <input id="register-username" type="text" placeholder="Username" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+            <input id="register-password" type="password" placeholder="Password" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+            <button id="register-btn" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">Register</button>
+            <p class="text-center text-sm text-gray-600 mt-4">
+                Already have an account? <a href="#" id="show-login" class="text-blue-600 hover:underline">Login</a>
+            </p>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE_URL = 'http://127.0.0.1:8000/api'; // Replace with your Django API URL
+            let authToken = localStorage.getItem('authToken');
+
+            const loginModal = document.getElementById('login-modal');
+            const registerModal = document.getElementById('register-modal');
+            const showRegister = document.getElementById('show-register');
+            const showLogin = document.getElementById('show-login');
+
+            const loginBtn = document.getElementById('login-btn');
+            const registerBtn = document.getElementById('register-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            const createPostBtn = document.getElementById('create-post-btn');
+            const postsFeed = document.getElementById('posts-feed');
+
+            // Mock user and posts data
+            let currentUser = {
+                id: 1,
+                username: 'Jane Doe',
+                bio: 'Web Developer | Tech Enthusiast | Coffee Lover',
+                posts_count: 15,
+                followers_count: 250,
+                following_count: 120,
+            };
+
+            let posts = [
+                { id: 1, author: 'John Smith', content: 'Just finished a great book! Highly recommend "The Midnight Library".', likes: 12, comments: [{author: 'Alice', content: 'I loved that book too!'}, {author: 'Bob', content: 'Added to my reading list.'}] },
+                { id: 2, author: 'Jane Doe', content: 'Excited to start a new project with Django and React! #webdev', likes: 45, comments: [] },
+                { id: 3, author: 'Mike Johnson', content: 'Beautiful day for a hike! ☀️', likes: 28, comments: [] },
+            ];
+
+            // --- Authentication ---
+            function checkAuth() {
+                if (authToken) {
+                    loginModal.classList.add('hidden');
+                    registerModal.classList.add('hidden');
+                    fetchUserProfile();
+                    fetchPosts();
+                } else {
+                    loginModal.classList.remove('hidden');
+                }
+            }
+
+            showRegister.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginModal.classList.add('hidden');
+                registerModal.classList.remove('hidden');
+            });
+
+            showLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                registerModal.classList.add('hidden');
+                loginModal.classList.remove('hidden');
+            });
+
+            loginBtn.addEventListener('click', async () => {
+                // In a real app, you would make a POST request to your backend
+                // For now, we'll simulate a successful login
+                authToken = 'fake-auth-token';
+                localStorage.setItem('authToken', authToken);
+                checkAuth();
+            });
+            
+            registerBtn.addEventListener('click', async () => {
+                // In a real app, you would make a POST request to your backend
+                // For now, we'll simulate a successful registration and login
+                authToken = 'fake-auth-token';
+                localStorage.setItem('authToken', authToken);
+                checkAuth();
+            });
+
+            logoutBtn.addEventListener('click', () => {
+                authToken = null;
+                localStorage.removeItem('authToken');
+                postsFeed.innerHTML = '';
+                checkAuth();
+            });
+
+            // --- Profile ---
+            function fetchUserProfile() {
+                // In a real app, you would fetch the user's profile from the backend
+                document.getElementById('profile-username').textContent = currentUser.username;
+                document.getElementById('profile-bio').textContent = currentUser.bio;
+                document.getElementById('profile-posts-count').textContent = currentUser.posts_count;
+                document.getElementById('profile-followers-count').textContent = currentUser.followers_count;
+                document.getElementById('profile-following-count').textContent = currentUser.following_count;
+            }
+
+            // --- Posts ---
+            function fetchPosts() {
+                // In a real app, you would fetch posts from the backend
+                renderPosts(posts);
+            }
+
+            function renderPosts(postsToRender) {
+                postsFeed.innerHTML = '';
+                postsToRender.forEach(post => {
+                    const postElement = document.createElement('div');
+                    postElement.className = 'bg-white p-6 rounded-lg shadow-md';
+                    postElement.innerHTML = `
+                        <div class="flex items-center mb-4">
+                            <img src="https://placehold.co/48x48/E2E8F0/4A5568?text=${post.author.charAt(0)}" alt="Author" class="w-12 h-12 rounded-full mr-4">
+                            <div>
+                                <h4 class="font-bold text-lg">${post.author}</h4>
+                                <p class="text-gray-500 text-sm">2 hours ago</p>
+                            </div>
+                        </div>
+                        <p class="post-content mb-4">${post.content}</p>
+                        <div class="flex items-center justify-between text-gray-500">
+                            <button class="like-btn flex items-center space-x-2 hover:text-red-500" data-post-id="${post.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                                <span>${post.likes} Likes</span>
+                            </button>
+                            <button class="comment-btn flex items-center space-x-2 hover:text-blue-500" data-post-id="${post.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                <span>${post.comments.length} Comments</span>
+                            </button>
+                            <button class="share-btn flex items-center space-x-2 hover:text-green-500" data-post-id="${post.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.002l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.368a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
+                                <span>Share</span>
+                            </button>
+                        </div>
+                        <div class="comments-section mt-4 pt-4 border-t border-gray-200 hidden">
+                           <!-- Comments will be rendered here -->
+                           <div class="comment-list space-y-2"></div>
+                           <div class="add-comment mt-2">
+                               <input type="text" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Write a comment...">
+                               <button class="post-comment-btn mt-2 bg-blue-500 text-white px-4 py-1 rounded-md text-sm">Post</button>
+                           </div>
+                        </div>
+                    `;
+                    postsFeed.appendChild(postElement);
+                });
+            }
+
+            createPostBtn.addEventListener('click', () => {
+                const content = document.getElementById('post-content').value;
+                if (content.trim()) {
+                    // In a real app, you would send this to the backend
+                    const newPost = {
+                        id: posts.length + 1,
+                        author: currentUser.username,
+                        content: content,
+                        likes: 0,
+                        comments: []
+                    };
+                    posts.unshift(newPost); // Add to the beginning of the array
+                    renderPosts(posts);
+                    document.getElementById('post-content').value = '';
+                }
+            });
+
+            postsFeed.addEventListener('click', (e) => {
+                // Like button
+                if (e.target.closest('.like-btn')) {
+                    const button = e.target.closest('.like-btn');
+                    const postId = button.dataset.postId;
+                    const post = posts.find(p => p.id == postId);
+                    post.likes++; // Simulate liking
+                    button.querySelector('span').textContent = `${post.likes} Likes`;
+                }
+
+                // Comment button
+                if (e.target.closest('.comment-btn')) {
+                    const button = e.target.closest('.comment-btn');
+                    const commentsSection = button.parentElement.nextElementSibling;
+                    commentsSection.classList.toggle('hidden');
+                    if(!commentsSection.classList.contains('hidden')){
+                        renderComments(button.dataset.postId);
+                    }
+                }
+
+                // Post comment button
+                if (e.target.classList.contains('post-comment-btn')) {
+                    const button = e.target;
+                    const commentInput = button.previousElementSibling;
+                    const content = commentInput.value;
+                    if (content.trim()) {
+                        const postId = button.closest('.comments-section').previousElementSibling.querySelector('.comment-btn').dataset.postId;
+                        const post = posts.find(p => p.id == postId);
+                        post.comments.push({ author: currentUser.username, content: content });
+                        renderComments(postId);
+                        commentInput.value = '';
+                    }
+                }
+            });
+
+            function renderComments(postId) {
+                const post = posts.find(p => p.id == postId);
+                const postElement = Array.from(postsFeed.children).find(el => el.querySelector(`.comment-btn[data-post-id="${postId}"]`));
+                const commentList = postElement.querySelector('.comment-list');
+                commentList.innerHTML = '';
+                post.comments.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.className = 'flex items-start';
+                    commentElement.innerHTML = `
+                        <img src="https://placehold.co/32x32/E2E8F0/4A5568?text=${comment.author.charAt(0)}" alt="Author" class="w-8 h-8 rounded-full mr-3">
+                        <div class="bg-gray-100 p-2 rounded-lg">
+                            <p class="font-semibold text-sm">${comment.author}</p>
+                            <p>${comment.content}</p>
+                        </div>
+                    `;
+                    commentList.appendChild(commentElement);
+                });
+            }
+
+            // Initial Load
+            checkAuth();
+        });
+    </script>
+</body>
+</html>
