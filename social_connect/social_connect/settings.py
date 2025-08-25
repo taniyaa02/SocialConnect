@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-dupoftp(nl34)m@pc38ljwkv8h4vev-5l*-1j_3_5e3^bk&u_m
 DEBUG = True
 
 # import os
-# ALLOWED_HOSTS = ['echo-chamber-9ilm.onrender.com']
+ALLOWED_HOSTS = ['echo-chamber-9ilm.onrender.com', 'socialconnect-sila.onrender.com']
 
 
 # Application definition
